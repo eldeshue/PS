@@ -1,0 +1,116 @@
+// 기본 -> MLE
+// 비트 마스킹 -> TLE
+#include <iostream>
+#include <string>
+#include <stack>
+#include <queue>
+
+short int start, goal;
+
+short int Double(const short int &num)
+{
+  if (num > 5000)
+  {
+    return (num * 2) % 10000;
+  }
+  else
+  {
+    return num * 2;
+  }
+}
+
+short int Sub(const short int &num)
+{
+  if (num == 0)
+  {
+    return 9999;
+  }
+  else
+  {
+    return num - 1;
+  }
+}
+
+short int Rshift(const short int &num)
+{
+  short int r = num % 10;
+  return num / 10 + 1000 * r;
+}
+
+short int Lshift(const short int &num)
+{
+  short int l = num / 1000;
+  return (num % 1000) * 10 + l;
+}
+
+void BFS()
+{
+  // 비트마스킹
+  std::queue<std::pair<unsigned int, short int>> nextNode;
+  nextNode.push(std::make_pair(1, start));
+
+  short int &curNum = start;
+  unsigned int curStat;
+  // BFS
+  while (!nextNode.empty())
+  {
+    curStat = nextNode.front().first;
+    curNum = nextNode.front().second;
+    nextNode.pop();
+    if (curNum == goal)
+    {
+      break;
+    }
+    // exponential 하게 queue가 증가함.
+    // 하지만 별도의 방법으로 큐에 안집어넣기도 좀 그런데....
+    nextNode.push(std::make_pair((curStat << 2) + 0, Double(curNum)));
+    nextNode.push(std::make_pair((curStat << 2) + 1, Sub(curNum)));
+    nextNode.push(std::make_pair((curStat << 2) + 2, Lshift(curNum)));
+    nextNode.push(std::make_pair((curStat << 2) + 3, Rshift(curNum)));
+  }
+  // print status
+  // decode bit;
+  std::stack<char> result;
+  while (curStat != 1)
+  {
+    switch (curStat & 3)
+    {
+    case 3:
+      result.push('R');
+      break;
+    case 2:
+      result.push('L');
+      break;
+    case 1:
+      result.push('S');
+      break;
+    case 0:
+      result.push('D');
+      break;
+    default:
+      break;
+    }
+    curStat = curStat >> 2;
+  }
+  while (!result.empty())
+  {
+    std::cout << result.top();
+    result.pop();
+  }
+  std::cout << "\n";
+}
+
+int main()
+{
+  std::ios_base::sync_with_stdio(false);
+  std::cin.tie(nullptr);
+  std::cout.tie(nullptr);
+
+  short int numTest;
+  std::cin >> numTest;
+  for (short int i = 0; i < numTest; ++i)
+  {
+    std::cin >> start >> goal;
+    BFS();
+  }
+}
