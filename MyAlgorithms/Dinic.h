@@ -2,11 +2,12 @@
 #ifndef DINIC_H
 #define DINIC_H
 
-#include <queue>
-#include <vector>
-#include <functional>
 #include <algorithm>
+#include <functional>
 #include <limits>
+#include <queue>
+#include <unordered_set>
+#include <vector>
 
 using ll = long long;
 using Node = int;
@@ -141,6 +142,41 @@ public:
 	{
 		return flow_[from][to];
 	}
+
+	/**
+	* @brief traverse residual network and get seperated set of nodes
+	*/
+	std::pair<std::unordered_set<int>, std::unordered_set<int>> MinCut()
+	{
+		std::pair<std::unordered_set<int>, std::unordered_set<int>> result;
+		auto& [source_side_nodes, sink_side_nodes] = result;
+
+		for (int i = 0; i < graph_.size(); ++i)
+			result.second.insert(i);
+
+		// bfs, traverse residual network
+		std::queue<int> q;
+		sink_side_nodes.erase(source_);
+		source_side_nodes.insert(source_);
+		q.push(source_);
+		while (!q.empty())
+		{
+			int const cur_node = q.front();
+			q.pop();
+			for (int const next_node : graph_[cur_node])
+			{
+				if (sink_side_nodes.count(next_node) &&
+					capacity_[cur_node][next_node] - flow_[cur_node][next_node] > 0)
+				{
+					sink_side_nodes.erase(next_node);
+					source_side_nodes.insert(next_node);
+					q.push(next_node);
+				}
+			}
+		}
+		return result;
+	}
+
 };
 
 #endif
