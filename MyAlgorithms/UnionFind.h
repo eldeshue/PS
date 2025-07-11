@@ -31,20 +31,22 @@ public:
 		node2 = find(node2);
 		return node1 == node2;
 	}
-	void unite(int node1, int node2) // unite by size
+	void unite(int node1, int node2) // unite by rank
 	{
 		node1 = find(node1);
 		node2 = find(node2);
 		if (node1 == node2)
 			return;
-		if (parent[node1] > parent[node2]) // node2's size is bigger
+		if (parent[node1] >= parent[node2]) // node2's rank is higher
 		{
-			parent[node2] += parent[node1];
+			if (parent[node1] == parent[node2])	// same rank
+			{
+				parent[node1]--;	// rank increase
+			}
 			parent[node1] = node2;
 		}
-		else // node1's size is bigger or same
+		else // node1's rank is higher than node2's rank
 		{
-			parent[node1] += parent[node2];
 			parent[node2] = node1;
 		}
 		numGroup--;
@@ -55,9 +57,9 @@ public:
 /*
 
 // weighted Union Find
-// ¹è¿­ÀÇ °ªÀÌ À½¼öÀÎ °æ¿ì, ºÎ¸ğÀÓ. Àı´ñ°ªÀº °³¼ö 
-// ¾ç¼öÀÌ¸é ÀÚ½ÄÀÌ°í, ºÎ¸ğ¸¦ °¡¸®Å´.
-// µû¶ó¼­ ±âº»ÀûÀ¸·Î´Â -1 À¸·Î ÃÊ±âÈ­ ÇÒ°Í
+// ï¿½è¿­ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½, ï¿½Î¸ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+// ï¿½ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½Ú½ï¿½ï¿½Ì°ï¿½, ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½Å´.
+// ï¿½ï¿½ï¿½ï¿½ ï¿½âº»ï¿½ï¿½ï¿½ï¿½ï¿½Î´ï¿½ -1 ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­ ï¿½Ò°ï¿½
 int Find(int* const parent, const int size, int target_index)
 {
 	if (target_index >= size)
@@ -65,7 +67,7 @@ int Find(int* const parent, const int size, int target_index)
 		return -1;
 	}
 	else if (parent[target_index] < 0)
-	{	// Å©±â°¡ 1ÀÌ°í, ºÎ¸ğÀÌ¹Ç·Î, ÀÚ±â ÀÚ½Å ÇÏ³ª
+	{	// Å©ï¿½â°¡ 1ï¿½Ì°ï¿½, ï¿½Î¸ï¿½ï¿½Ì¹Ç·ï¿½, ï¿½Ú±ï¿½ ï¿½Ú½ï¿½ ï¿½Ï³ï¿½
 		return target_index;
 	}
 	else
@@ -81,15 +83,15 @@ void Union(int* const parent, const int size, int node1, int node2)
 	node1 = Find(parent, size, node1);
 	node2 = Find(parent, size, node2);
 
-	if (node1 == node2)	// ÀÌ¹Ì °°Àº ºÎ¸ğÀÓ
+	if (node1 == node2)	// ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Î¸ï¿½ï¿½ï¿½
 	{
 		return;
 	}
 
-	// µÑÀÇ ºÎ¸ğ°¡ ´Ù¸£´Ù
-	// µÎ ³ëµå ¸ğµÎ ºÎ¸ğ¸¦ Ã£¾ÒÀ¸¹Ç·Î, parent°ªÀÌ À½¼öÀÓ
-	// Å©±â°¡ ÀÛÀº Æ®¸®°¡ Å©±â°¡ Å« Æ®¸®ÀÇ ¹ØÀ¸·Î µé¾î°¡¾ß ÇÔ.
-	// Áï º¸´Ù ÀÛÀº ÂÊÀ» ºÎ¸ğ·Î
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Î¸ï¿½ ï¿½Ù¸ï¿½ï¿½ï¿½
+	// ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Î¸ï¿½ Ã£ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½, parentï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	// Å©ï¿½â°¡ ï¿½ï¿½ï¿½ï¿½ Æ®ï¿½ï¿½ï¿½ï¿½ Å©ï¿½â°¡ Å« Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½î°¡ï¿½ï¿½ ï¿½ï¿½.
+	// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Î¸ï¿½ï¿½
 	if (parent[node1] < parent[node2])
 	{
 		parent[node1] += parent[node2];
@@ -112,12 +114,12 @@ void Union(int node1, int node2);
 int Find(int target_index)
 {
 	if (parent[target_index] < 0)
-	{	
+	{
 		return target_index;
 	}
 	else
 	{
-		int p = Find(parent[target_index]); 
+		int p = Find(parent[target_index]);
 		parent[target_index] = p;
 		return p;
 	}
@@ -128,7 +130,7 @@ void Union( int node1, int node2)
 	node1 = Find(node1);
 	node2 = Find(node2);
 
-	if (node1 == node2)	
+	if (node1 == node2)
 	{
 		return;
 	}
