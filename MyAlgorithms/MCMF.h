@@ -53,13 +53,13 @@ private:
 		for (int& i = next_node_idx_[cur_node]; i < graph_[cur_node].size(); ++i)	// remember previous idx to traverse
 		{
 			Node const next_node = graph_[cur_node][i];
-			ll const residual_flow = capacity_[cur_node][next_node] - flow_[cur_node][next_node];
-			bool const is_next_node_on_spfa = (cost_[next_node] == cost_[cur_node] + edge_cost_[cur_node][next_node]);
+			Flow const residual_flow = capacity_[cur_node][next_node] - flow_[cur_node][next_node];
+			bool const is_next_node_on_spfa = (cost_[next_node] == (cost_[cur_node] + edge_cost_[cur_node][next_node]));
 			if (!visited_[next_node] && is_next_node_on_spfa && residual_flow > 0)
 			{
 				// recurse
 				visited_[next_node] = true;
-				ll const aug_flow = get_aug_flow(next_node, std::min(cur_flow, residual_flow));
+				Flow const aug_flow = get_aug_flow(next_node, std::min(cur_flow, residual_flow));
 
 				// augment path found
 				if (aug_flow > 0)
@@ -91,7 +91,7 @@ private:
 			if (!visited_[cur_node])
 				continue;
 			for (Node const next_node : graph_[cur_node]) {
-				if (capacity_[cur_node][next_node] && !visited_[next_node])
+				if (capacity_[cur_node][next_node] - flow_[cur_node][next_node] > 0 && !visited_[next_node])
 					mn = std::min(mn, cost_[cur_node] + edge_cost_[cur_node][next_node] - cost_[next_node]);
 			}
 		}
@@ -128,7 +128,7 @@ public:
 		AdjList const& graph, std::vector<std::vector<ll>> const& capacity, std::vector<std::vector<ll>>& edge_cost)
 		: source_(source), sink_(sink), num_node_(graph.size()),
 		graph_(graph), visited_(num_node_, false), next_node_idx_(num_node_, 0)
-		, capacity_(capacity), flow_(num_node_, std::vector<ll>(num_node_, 0))
+		, capacity_(capacity), flow_(num_node_, std::vector<Flow>(num_node_, 0))
 		, edge_cost_(edge_cost), cost_(num_node_, MAX_COST)
 	{
 		std::vector<Cost> h(num_node_, MAX_COST);
@@ -212,15 +212,13 @@ public:
 		// increase flow at a time
 		std::pair<Flow, Cost> result = { 0, 0 };
 		auto& [max_flow, min_cost] = result;
-		Flow aug_flow = 0;
 
-		while (true)
-		{
-			std::fill(next_node_idx_.begin(), next_node_idx_.end(), 0); // for get_aug_flow, safe index
-
-			// set visited
+		do {
+			std::fill(next_node_idx_.begin(), next_node_idx_.end(), 0);
 			std::fill(visited_.begin(), visited_.end(), false);
 			visited_[source_] = true;
+
+			Flow aug_flow = 0;
 			while (aug_flow = get_aug_flow(source_, MAX_FLOW))
 			{
 				// apply aug flow
@@ -232,9 +230,8 @@ public:
 				visited_[source_] = true;
 			}
 
-			if (!update_spfa())
-				break;	// no spfa left, stop
-		}
+		} while (update_spfa());
+
 		return result;
 	}
 };
