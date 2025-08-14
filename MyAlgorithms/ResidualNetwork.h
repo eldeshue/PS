@@ -49,7 +49,7 @@ public:
 		graph_[node2].push_back({ node1, cap, 0, 0, graph_[node1].size() - 1 });
 	}
 
-	void AddDirectedEdge(Node const from, Node const to, Flow const cap, Cost const cst)
+	void AddDirectedEdge(Node const from, Node const to, Flow const cap, Cost const cst = 0)
 	{
 		graph_[from].push_back({ to, cap, 0, cst,  graph_[to].size() });
 		graph_[to].push_back({ from, 0, 0, -cst,  graph_[from].size() - 1 });
