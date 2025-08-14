@@ -8,26 +8,33 @@
 #include <queue>
 #include <unordered_set>
 #include <vector>
-#include <deque>
 
 using ll = long long;
 using Node = int;
+using Flow = ll;
+using Cost = ll;
+
+Cost constexpr const MAX_COST = std::numeric_limits<ll>().max() >> 1;	// half limit
+Flow constexpr const MAX_FLOW = std::numeric_limits<ll>().max() >> 1;	// half limit
+
+struct REdge;
+using RGraph = std::vector<std::vector<REdge>>;
 
 struct REdge
 {
 	Node next_node_;
-	ll capacity_;
-	ll flow_;
-	REdge* reverse_;
+	Flow capacity_;
+	Flow flow_;
+	Cost cost_;	// for MCMF
+	size_t reverse_idx_;
 
-	void IncreaseFlow(ll const amount)
+	void IncreaseFlow(RGraph& graph, Flow const amount)
 	{
 		flow_ += amount;
-		reverse_->flow_ -= amount;
+		graph[next_node_][reverse_idx_].flow_ -= amount;
 	}
-	ll GetResidualFlow() { return capacity_ - flow_; }
+	ll GetResidualFlow() const { return capacity_ - flow_; }
 };
-using RGraph = std::vector<std::deque<REdge>>;
 
 class ResidualNetwork
 {
@@ -40,20 +47,16 @@ public:
 	ResidualNetwork(ResidualNetwork const& other) : node_cnt_(other.node_cnt_), graph_(other.graph_) {}
 	ResidualNetwork& operator=(ResidualNetwork const& rhs) = delete;
 
-	void AddUnDirectedEdge(Node const node1, Node const node2, ll const cap)
+	void AddUnDirectedEdge(Node const node1, Node const node2, Flow const cap)
 	{
-		graph_[node1].push_back({ node2, cap, 0, nullptr });
-		graph_[node2].push_back({ node1, cap, 0, nullptr });
-		graph_[node1].back().reverse_ = &(graph_[node2].back());
-		graph_[node2].back().reverse_ = &(graph_[node1].back());
+		graph_[node1].push_back({ node2, cap, 0, 0, graph_[node2].size() });	// flow cost in undirected graph???
+		graph_[node2].push_back({ node1, cap, 0, 0, graph_[node1].size() - 1 });
 	}
 
-	void AddDirectedEdge(Node const from, Node const to, ll const cap)
+	void AddDirectedEdge(Node const from, Node const to, Flow const cap, Cost const cst)
 	{
-		graph_[from].push_back({ to, cap, 0, nullptr });
-		graph_[to].push_back({ from, 0, 0, nullptr });
-		graph_[from].back().reverse_ = &(graph_[to].back());
-		graph_[to].back().reverse_ = &(graph_[from].back());
+		graph_[from].push_back({ to, cap, 0, cst,  graph_[to].size() });
+		graph_[to].push_back({ from, 0, 0, -cst,  graph_[from].size() - 1 });
 	}
 
 	RGraph& GetGraph() { return graph_; }
@@ -129,7 +132,7 @@ private:
 				// augment path found
 				if (aug_flow > 0)
 				{
-					cur_edge.IncreaseFlow(aug_flow);
+					cur_edge.IncreaseFlow(graph_, aug_flow);
 					return aug_flow;
 				}
 			}
