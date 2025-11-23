@@ -1,16 +1,18 @@
-
+﻿
 #ifndef TARJAN_SOLVER
 #define TARJAN_SOLVER
 
 #include <vector>
 #include <stack>
+#include <unordered_set>
+#include <algorithm>
 
 class TarjanSolver
 {
 private:
-	TarjanSolver();
-	TarjanSolver(const TarjanSolver&);
-	TarjanSolver& operator=(const TarjanSolver&);
+	TarjanSolver() = delete;
+	TarjanSolver(const TarjanSolver&) = delete;
+	TarjanSolver& operator=(const TarjanSolver&) = delete;
 
 	using Graph = std::vector<std::vector<int>>;
 
@@ -63,7 +65,7 @@ public:
 		: graph(g), N(g.size()), order(0), curSccNum(0),
 		sccGroupNum(N, 0), collected(N, false)
 	{
-		// run tarjan algorithm
+		// run tarjan algorithm, 1-based
 		for (int node = 1; node < N; ++node)
 			if (sccGroupNum[node] == 0)
 				dfs(node);
@@ -93,6 +95,36 @@ public:
 
 		for (int i = 1; i <= offset; ++i)
 			result[i] = (sccGroupNum[i] < sccGroupNum[i + offset]);
+		return result;
+	}
+
+	int _queryGroupId(int const node) {
+		return sccGroupNum[node];
+	}
+
+	Graph _getDagOfScc() {
+		// list of edges
+		// to exclude duplicated edges, use hash set
+		std::vector<std::unordered_set<int>> adj_list_scc(curSccNum + 1);
+		for (int from = 1; from < N; ++from)
+		{
+			int const fromScc = sccGroupNum[from];
+			for (int const to : graph[from])
+			{
+				int const toScc = sccGroupNum[to];
+				if (fromScc != toScc)
+				{
+					adj_list_scc[fromScc].insert(toScc);
+				}
+			}
+		}
+
+		// transform
+		Graph result(curSccNum + 1);
+		std::transform(adj_list_scc.begin(), adj_list_scc.end(), result.begin(),
+			[](std::unordered_set<int> const& list) {
+				return std::vector<int>(list.begin(), list.end());
+			});
 		return result;
 	}
 };
