@@ -1,6 +1,31 @@
 
-#ifndef EXPLICIT_DINIC_H
-#define EXPLICIT_DINIC_H
+/*
+	BOJ 1210
+
+	노드에 비용을 부과하므로, vertex split을 수행해하여 둘 사이에 노드 점유 비용을 부과하는 엣지를 추가
+
+	min cut은 max flow이므로(쾨닉의 정리), 최대유량 알고리즘을 돌려주면 된다.
+
+	최대유량을 돌린 후 얻어지는 residual network에 대해서 그래프를 분할하는 edge를 찾는데,
+	여기서 많이 해맸다.
+
+	---
+
+	처음에는 src에서 bfs를 돌려 residual flow가 0인 edge를 수집했는데, 반례가 존재했다.
+	그 다음은 src와 sink에서 각각 돌린 다음, 겹치는느 것을 찾았으나, 이 또한 반례가 존재했다.
+
+	---
+
+	정답은 문제의 정의속에 있었다. min cut에 의해 분할되면서, residual flow가 0인 엣지를 찾으면 된다.
+
+	---
+
+	발상이 꽤 빠르게 떠올린 것 치고는 cut을 내는 edge 구하는 데에 있어서 좀 문제가 있었다...
+	쾨닉의 정리에 대한 이해도가 부족한 탓인듯....
+*/
+
+#include <iostream>
+#include <set>
 
 #include <algorithm>
 #include <functional>
@@ -172,7 +197,7 @@ public:
 	/**
 	* @brief traverse residual network and get seperated set of nodes
 	*/
-	std::pair<std::unordered_set<int>, std::unordered_set<int>> FindMinCutPartition()
+	std::pair<std::unordered_set<int>, std::unordered_set<int>> MinCut()
 	{
 		std::pair<std::unordered_set<int>, std::unordered_set<int>> result;
 		auto& [source_side_nodes, sink_side_nodes] = result;
@@ -203,16 +228,16 @@ public:
 		return result;
 	}
 
-	std::vector<REdge> FindMinCutSet() {
-		// MinCut을 구성하는 edge를 수집하는 알고리즘
-		auto [from_source, from_sink] = FindMinCutPartition();
-		std::vector<REdge> result;
+	std::set<int> solve() {
+		// vertex cover 구하는 알고리즘 수행, vertex split으로 나눠진 노드들 획득하기
+		// min cut에 의해서 서로 갈라지고, residual flow가 0인 에지를 찾아야...
+		auto [from_source, from_sink] = MinCut();
+		std::set<int> result;
 		// pick common, search for all edges
 		for (auto const v : from_source) {
 			for (auto const& e : graph_[v]) {
-				// min cut에 의해서 서로 갈라지고, reverse edge가 아니며, 포화(residual flow가 0)된 에지를 찾는다.
-				if (from_sink.contains(e.next_node_) && e.capacity_ > 0 && e.GetResidualFlow() == 0) {
-					result.push_back(e);
+				if (from_sink.contains(e.next_node_) && e.capacity_ > 0 && e.GetResidualFlow() == 0) { // find splitted & saturated edge
+					result.insert(v >> 1);
 				}
 			}
 		}
@@ -221,4 +246,55 @@ public:
 
 };
 
-#endif
+
+int main()
+{
+	std::ios_base::sync_with_stdio(false);
+	std::cin.tie(nullptr);
+	std::cout.tie(nullptr);
+
+	// input
+	int n, m, src, snk;
+	std::cin >> n >> m >> src >> snk;
+	std::vector<ll> node_cost(n + 1);
+	for (int i = 1; i <= n; ++i) {
+		std::cin >> node_cost[i];
+	}
+	std::vector<std::pair<int, int>> edges(m);
+	for (auto& [n1, n2] : edges) {
+		std::cin >> n1 >> n2;
+	}
+
+	// build residual graph
+	// vertex split
+	ResidualNetwork net_work(2 * (n + 1));
+	for (int node = 1; node <= n; ++node) {
+		int split_node1 = node << 1;	// inlet
+		int split_node2 = split_node1 | 1; // outlet
+
+		// 문제는 undirected graph인데, 여기서 vertex split을 어떻게 처리해야 되는거지???
+		// 문제를 directed로 만들어야 하는구나?
+		net_work.AddDirectedEdge(split_node1, split_node2, node_cost[node], 0);
+	}
+
+	// link nodes
+	for (auto const [n1, n2] : edges) {
+		int in_n1 = n1 << 1;
+		int out_n1 = in_n1 | 1;
+		int in_n2 = n2 << 1;
+		int out_n2 = in_n2 | 1;
+
+		net_work.AddDirectedEdge(out_n1, in_n2, MAX_FLOW, 0);
+		net_work.AddDirectedEdge(out_n2, in_n1, MAX_FLOW, 0);
+	}
+
+	// run max flow
+	ExplicitDinic solver((Node)(src << 1), (Node)((snk << 1) | 1), net_work.GetGraph());
+	ll max_flow = solver.GetMaxFlow();
+
+	// find max cut based on residual flow
+	auto result = solver.solve();
+	for (auto const node : result) {
+		std::cout << node << ' ';
+	}
+}
