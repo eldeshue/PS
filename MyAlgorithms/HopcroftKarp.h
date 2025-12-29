@@ -1,11 +1,11 @@
-
-#include <iostream>
-#include <vector>
-#include <queue>
-#include <tuple>
+﻿
 
 #ifndef HOPCROFT_KARP_SOLVER_H
 #define HOPCROFT_KARP_SOLVER_H
+
+#include <vector>
+#include <queue>
+#include <tuple>
 
 class HopcroftKarpSolver
 {
@@ -14,13 +14,13 @@ private:
 	// else right
 	using pii = std::pair<int, int>;
 	int offset;
-	const std::vector<std::vector<int>> &graph;
+	const std::vector<std::vector<int>>& graph;
 	std::vector<int> matchedNodes;
 	std::vector<int> distLayer;
 
-	bool isLeft(const int &nodeId) { return (nodeId < offset); }
-	bool isFreeNode(const int &nodeId) { return (matchedNodes[nodeId] == -1); };
-	bool isMatchedEdge(const int &lNode, const int &rNode) { return (matchedNodes[lNode] == rNode); };
+	bool isLeft(const int nodeId) const { return (nodeId < offset); }
+	bool isFreeNode(const int nodeId) { return (matchedNodes[nodeId] == -1); };
+	bool isMatchedEdge(const int lNode, const int rNode) { return (matchedNodes[lNode] == rNode); };
 	// find minimum distance of aug path
 	int bfs()
 	{
@@ -50,13 +50,13 @@ private:
 			}
 			else if (!isLeft(curNode) && !isFreeNode(curNode)) // current node is right, use matched edge
 			{
-				const int &nextNode = matchedNodes[curNode];
+				const int& nextNode = matchedNodes[curNode];
 				distLayer[nextNode] = curDist + 1;
 				q.push(std::make_pair(nextNode, curDist + 1));
 			}
 			else // current node is left
 			{
-				for (const int &nextNode : graph[curNode])
+				for (const int& nextNode : graph[curNode])
 				{
 					// finding unmatched edge
 					if (distLayer[nextNode] == -1 && !isMatchedEdge(curNode, nextNode))
@@ -74,7 +74,7 @@ private:
 		}
 		return minAugDist;
 	}
-	bool dfs(const int &curNode, const int &curDist)
+	bool dfs(const int curNode, const int curDist)
 	{
 		// base case
 		if (curDist == 0 && isLeft(curNode) && isFreeNode(curNode))
@@ -87,7 +87,7 @@ private:
 		}
 		else // follow unmatched edge
 		{
-			for (const int &nextNode : graph[curNode])
+			for (const int& nextNode : graph[curNode])
 			{
 				// follow alternate path depend on distLayer
 				if (distLayer[nextNode] == curDist - 1)
@@ -106,8 +106,11 @@ private:
 	}
 
 public:
-	HopcroftKarpSolver(int offset, const std::vector<std::vector<int>> &g)
-		: offset(offset), graph(g), matchedNodes(g.size(), -1), distLayer(g.size(), false){};
+	HopcroftKarpSolver(int offset, const std::vector<std::vector<int>>& g)
+		: offset(offset), graph(g), matchedNodes(g.size(), -1), distLayer(g.size(), false) {
+	};
+
+	// O(n ^ 2.5) !!!
 	int maxMatch()
 	{
 		int targetDist = 0, maxMatchCnt = 0;
